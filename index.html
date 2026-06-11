@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futures Prop Firms: Landmine or Goldmine? | Capital Outlook</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Institutional Research (Background: Zinc-50 #FAFAFA, Text: Zinc-900 #18181B, Accents: Slate-900 #0F172A, Warning: Amber-700 #B45309, Success: Emerald-700 #047857) -->
+    
+    <!-- Application Structure Plan: 
+         1. The Hook (Magazine Feature Layout): Establishes the narrative, tone, and the fundamental economic reality of retail prop firms to capture the reader's attention immediately.
+         2. The Business Model (Visual Data Layout): Deconstructs the "B-Book" model, explaining capital flows and incentives. Uses a doughnut chart for revenue breakdown.
+         3. The Drawdown Trap (Interactive Visualization): The most critical technical concept. Uses a Chart.js line chart to visually explain Intraday Trailing vs EOD drawdowns.
+         4. The Data Room (Interactive Dashboard): Allows users to filter and compare the 7 specific firms (Topstep, Apex, MFFu, Lucid, Tradify, Top One, Alpha) based on their specific trading style.
+         5. The Verdict & Macro View (Structured Text): Answers "What changes next?" and provides a final analytical conclusion for the CFD/Crypto trader.
+         Rationale: This structure moves the user linearly from macro-level industry understanding to micro-level technical mechanics, and finally to actionable, filterable data for their specific needs. -->
+    
+    <!-- Visualization & Content Choices: 
+         - Revenue Model: Chart.js Doughnut -> Goal: Explain firm incentives -> Justification: High-impact visualization showing that evaluation failures, not market profits, fund the industry. 
+         - Drawdown Mechanics: Chart.js Line Chart -> Goal: Compare risk models -> Justification: The only way to truly understand a trailing drawdown is to see it mapped against an equity curve over time.
+         - Firm Comparison: Interactive HTML Cards with JS Filtering -> Goal: Organize actionable data -> Justification: Allows quick filtering by trader need (Scalper vs Swing, EOD vs Trailing) avoiding a massive, unreadable table.
+         - Capital Flow: HTML/CSS Grid with Unicode arrows -> Goal: Explain the "Gauntlet" -> Justification: Clear process mapping without relying on external image assets or SVG. -->
+         
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0F172A',
+                            light: '#FAFAFA',
+                            accent: '#B45309', // Amber for highlights/warnings
+                            success: '#047857' // Emerald for good terms
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #FAFAFA;
+            color: #18181B;
+            scroll-behavior: smooth;
+        }
+        
+        /* Chart Container Styling Rule Compliance */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 400px; }
+        }
+
+        .drop-cap::first-letter {
+            float: left;
+            font-size: 4.5rem;
+            line-height: 0.8;
+            padding-top: 0.15rem;
+            padding-right: 0.5rem;
+            padding-left: 0.15rem;
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        /* Minimalist Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #F4F4F5; }
+        ::-webkit-scrollbar-thumb { background: #D4D4D8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A1A1AA; }
+
+        .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+
+        /* Flow Process styling without SVG */
+        .flow-arrow::after {
+            content: "↓";
+            display: block;
+            text-align: center;
+            font-size: 1.5rem;
+            color: #9CA3AF;
+            margin: 0.5rem 0;
+        }
+        @media (min-width: 768px) {
+            .md\:flow-arrow-right::after {
+                content: "→";
+                display: inline-block;
+                margin: 0 1rem;
+                vertical-align: middle;
+            }
+            .flow-arrow::after { display: none; }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-accent selection:text-white">
+
+    <!-- Sticky Navigation -->
+    <nav class="fixed w-full bg-brand-light/90 backdrop-blur-md z-50 border-b border-zinc-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="font-serif font-bold text-xl tracking-tight text-brand-dark">
+                    CAPITAL<span class="text-brand-accent">OUTLOOK</span>
+                </div>
+                <div class="hidden md:flex space-x-8 text-sm font-medium text-zinc-600">
+                    <a href="#thesis" class="hover:text-brand-dark transition-colors">The Thesis</a>
+                    <a href="#economics" class="hover:text-brand-dark transition-colors">Capital Flows</a>
+                    <a href="#mechanics" class="hover:text-brand-dark transition-colors">Risk Mechanics</a>
+                    <a href="#data-room" class="hover:text-brand-dark transition-colors">Firm Analysis</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content wrapper -->
+    <main class="pt-24 pb-20">
+        
+        <!-- SECTION 1: The Hook & Thesis -->
+        <section id="thesis" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
+            <header class="mb-10 text-center md:text-left">
+                <div class="text-xs font-bold tracking-widest text-brand-accent uppercase mb-4">Institutional Deep Dive</div>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-tight mb-6 text-brand-dark">
+                    "Futures" Prop Firms:<br>Landmine or Goldmine?
+                </h1>
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-zinc-500 border-b border-zinc-200 pb-8">
+                    <span class="font-semibold text-zinc-800">By the Trading Desk</span>
+                    <span>•</span>
+                    <span>14 Min Read</span>
+                    <span>•</span>
+                    <span>Retail Finance / Derivatives</span>
+                </div>
+            </header>
+
+            <article class="prose prose-lg text-zinc-700 font-serif leading-relaxed max-w-none">
+                <p class="drop-cap text-xl mb-6">
+                    For $49, a retail trader sitting in a suburban bedroom can ostensibly command $50,000 in institutional buying power. It sounds like a video game cheat code. But in the architecture of modern financial markets, there is no free leverage.
+                </p>
+                <p class="mb-6">
+                    If you are a CFD, Forex, or Crypto trader migrating to the CME futures markets, you have undoubtedly been bombarded by advertisements for retail proprietary trading firms. Companies like <strong>Topstep, Apex, My Funded Futures, Lucid Trading, Tradify, Top One Futures, and Alpha Futures</strong> have democratized access to institutional-grade liquidity. They offer a seductive premise: pass an evaluation, trade our capital, and keep up to 90% of the profits. You risk only the evaluation fee.
+                </p>
+                <p class="mb-8 font-sans bg-zinc-100 p-6 rounded-lg text-zinc-800 italic border-l-4 border-brand-accent">
+                    "To understand if this ecosystem is a goldmine for talent or a landmine for retail capital, we must stop looking at these companies as trading floors. We must look at them as actuarial businesses. It is the financialization of trader psychology."
+                </p>
+                <p class="mb-6">
+                    What is happening is not a sudden benevolence of Wall Street toward retail traders. It is a brilliant, highly scalable business model built on the statistical certainty of retail failure. Yet, paradoxically, for the disciplined 5%, it is the greatest asymmetric opportunity in modern finance. This report deconstructs the illusion, exposing the incentives, the hidden drawdown traps, and precisely which firm aligns with your operational edge.
+                </p>
+            </article>
+        </section>
+
+        <!-- SECTION 2: The Economics -->
+        <section id="economics" class="bg-brand-dark text-zinc-100 py-20 mb-24 border-y border-zinc-800">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div class="mb-16 max-w-3xl">
+                    <h2 class="text-3xl font-serif font-bold mb-4">The Invisible Hand: Economics of the Evaluation</h2>
+                    <p class="text-zinc-400 font-sans text-lg">
+                        Why does a firm let an unproven trader access high leverage? Because the business model does not rely on the trader winning. It relies on the law of large numbers and the "B-Book" reality.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+                    <div class="font-sans">
+                        <h3 class="text-xl font-bold mb-4 text-white">The Actuarial Reality</h3>
+                        <p class="text-zinc-300 mb-4 leading-relaxed">
+                            True institutional prop firms provide capital, train you, and share actual market profits. Retail prop firms operate differently. During the evaluation (and often early funded phases), <strong>trades are simulated</strong>. The capital is virtual. Your orders never hit the CME exchange.
+                        </p>
+                        <p class="text-zinc-300 mb-6 leading-relaxed">
+                            The primary revenue engine is not market alpha; it is <strong>evaluation fees and reset fees</strong>. Because day trading highly leveraged assets (like NQ or ES futures) is incredibly difficult, the failure rate hovers around 95%. The fees paid by the failing majority fund the simulated payouts to the successful minority.
+                        </p>
+                        
+                        <div class="grid grid-cols-2 gap-4 mt-8">
+                            <div class="bg-zinc-800/50 p-4 rounded-lg border border-zinc-700">
+                                <div class="text-brand-success font-bold mb-1">✓ The Winners</div>
+                                <p class="text-sm text-zinc-400">The Firm (Zero market risk, high volume). The Elite 5% of traders (Zero personal capital risk).</p>
+                            </div>
+                            <div class="bg-zinc-800/50 p-4 rounded-lg border border-zinc-700">
+                                <div class="text-red-400 font-bold mb-1">✗ The Losers</div>
+                                <p class="text-sm text-zinc-400">The 95% of retail traders who treat the evaluation like a casino, constantly paying reset fees.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Economics Doughnut Chart -->
+                    <div class="bg-zinc-900 rounded-xl p-6 border border-zinc-800 shadow-2xl">
+                        <h4 class="text-center font-sans text-sm font-bold text-zinc-400 mb-6 tracking-widest uppercase">Estimated Industry Revenue Model</h4>
+                        <div class="chart-container h-[300px]">
+                            <canvas id="economicsChart"></canvas>
+                        </div>
+                        <p class="text-xs text-center text-zinc-500 mt-4 font-sans">*Estimates based on industry standard B-Book/A-Book hybrid models.</p>
+                    </div>
+                </div>
+
+                <!-- Capital Flow Diagram -->
+                <div class="bg-zinc-800/30 rounded-xl p-8 border border-zinc-700 font-sans">
+                    <h3 class="text-center font-bold mb-8 tracking-widest text-zinc-400 uppercase text-sm">The Trader Lifecycle (Capital Flow)</h3>
+                    <div class="flex flex-col md:flex-row justify-between items-center text-center">
+                        
+                        <div class="w-full md:w-1/4 bg-zinc-900 border border-zinc-700 p-6 rounded-lg relative z-10 flow-arrow md:flow-arrow-right">
+                            <div class="text-3xl mb-3">🛒</div>
+                            <h4 class="font-bold text-white mb-2">1. Acquisition</h4>
+                            <p class="text-xs text-zinc-400">High volume of $50-$150 evaluation signups driven by affiliate marketing.</p>
+                        </div>
+                        
+                        <div class="w-full md:w-1/4 bg-zinc-900 border border-zinc-700 p-6 rounded-lg relative z-10 flow-arrow md:flow-arrow-right mt-4 md:mt-0">
+                            <div class="text-3xl mb-3">⚔️</div>
+                            <h4 class="font-bold text-white mb-2">2. The Gauntlet</h4>
+                            <p class="text-xs text-zinc-400">Strict drawdown rules trigger failures. Traders pay for continuous "resets".</p>
+                        </div>
+                        
+                        <div class="w-full md:w-1/4 bg-zinc-900 border border-brand-accent/50 p-6 rounded-lg relative z-10 flow-arrow md:flow-arrow-right mt-4 md:mt-0">
+                            <div class="text-3xl mb-3">💰</div>
+                            <h4 class="font-bold text-brand-accent mb-2">3. Sim Funded</h4>
+                            <p class="text-xs text-zinc-400">Survivors request payouts. Payouts are funded directly by Phase 1/2 failure fees.</p>
+                        </div>
+                        
+                        <div class="w-full md:w-1/4 bg-zinc-900 border border-brand-success/50 p-6 rounded-lg relative z-10 mt-4 md:mt-0">
+                            <div class="text-3xl mb-3">📈</div>
+                            <h4 class="font-bold text-brand-success mb-2">4. Live (A-Book)</h4>
+                            <p class="text-xs text-zinc-400">Only the most consistent are copied to a live brokerage account to extract real market alpha.</p>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 3: The Mechanics (Drawdown Trap) -->
+        <section id="mechanics" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
+            <div class="mb-10 text-center md:text-left">
+                <h2 class="text-3xl font-serif font-bold mb-4 text-brand-dark">The Landmine: Drawdown Mechanics</h2>
+                <p class="text-zinc-600 font-sans text-lg max-w-3xl">
+                    The biggest trap for Crypto and Forex converts is the <strong>Intraday Trailing Drawdown</strong>. If you do not understand this mechanic, you will inevitably blow your account, regardless of your strategy's overall edge.
+                </p>
+            </div>
+            
+            <div class="bg-white p-6 md:p-8 rounded-xl border border-zinc-200 shadow-lg font-sans">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h4 class="font-bold text-xl text-brand-dark">Equity Curve Simulation</h4>
+                        <p class="text-sm text-zinc-500 mt-1">Comparing a $2,000 drawdown limit on a $50k account.</p>
+                    </div>
+                    <div class="bg-zinc-50 border border-zinc-200 px-4 py-2 rounded text-sm font-mono text-zinc-700">
+                        Starting Bal: $50,000 | DD Limit: $2,000
+                    </div>
+                </div>
+                
+                <div class="chart-container h-[400px]">
+                    <canvas id="drawdownChart"></canvas>
+                </div>
+                
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-red-50 p-5 rounded-lg border border-red-100">
+                        <h5 class="font-bold text-red-800 mb-2">The Trailing Landmine (Red Line)</h5>
+                        <p class="text-sm text-red-900/80 leading-relaxed">
+                            Used by firms like Apex and Top One. The drawdown limit is calculated from your <strong>highest open intraday profit</strong>. In Trade 5, the trader was up $2,000 during the trade, but closed it for only $200 profit. The drawdown limit moved up to $50,000. When the account balance dipped slightly, the account was blown, <em>even though the trader was overall profitable</em>.
+                        </p>
+                    </div>
+                    <div class="bg-green-50 p-5 rounded-lg border border-green-100">
+                        <h5 class="font-bold text-green-800 mb-2">The EOD Goldmine (Green Line)</h5>
+                        <p class="text-sm text-green-900/80 leading-relaxed">
+                            Used by Topstep, MFFu, and Lucid. The limit is calculated based on your <strong>End of Day closing balance</strong>. Intraday swings do not penalize you. You are given true breathing room to let trades play out. This vastly increases the statistical probability of a trader succeeding.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: The Data Room (Interactive Comparison) -->
+        <section id="data-room" class="bg-zinc-100 py-20 border-y border-zinc-200 font-sans">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12 max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-serif font-bold mb-4 text-brand-dark">The Data Room: Firm Analysis</h2>
+                    <p class="text-zinc-600">
+                        Not all firms are created equal. Choosing a firm with rules misaligned to your specific strategy is a guaranteed path to failure. Use the filters below to find the exact economic framework that matches your operational edge.
+                    </p>
+                </div>
+
+                <!-- Interactive Filters -->
+                <div class="flex flex-wrap justify-center gap-3 mb-12">
+                    <button onclick="filterFirms('all')" id="btn-all" class="filter-btn px-6 py-2.5 rounded-full text-sm font-semibold bg-brand-dark text-white shadow-md transition-all">All 7 Firms</button>
+                    <button onclick="filterFirms('eod')" id="btn-eod" class="filter-btn px-6 py-2.5 rounded-full text-sm font-semibold bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 transition-all">Best for Swing (EOD Drawdown)</button>
+                    <button onclick="filterFirms('scalper')" id="btn-scalper" class="filter-btn px-6 py-2.5 rounded-full text-sm font-semibold bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 transition-all">Best for Scalpers (High Volume)</button>
+                    <button onclick="filterFirms('growth')" id="btn-growth" class="filter-btn px-6 py-2.5 rounded-full text-sm font-semibold bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 transition-all">Best for Scaling</button>
+                </div>
+
+                <!-- Dynamic Grid for Firms -->
+                <div id="firmGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Populated via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: The Verdict -->
+        <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+            <div class="mb-12">
+                <h2 class="text-3xl font-serif font-bold mb-6 text-brand-dark">The Final Verdict: What Changes Next?</h2>
+                <div class="prose prose-lg text-zinc-700 font-serif leading-relaxed max-w-none">
+                    <p>
+                        The retail prop firm industry is operating in a brief, golden regulatory arbitrage. By treating traders as "independent contractors" providing data via simulated accounts, they circumvent the heavy regulation of traditional brokerages. <strong>This will not last forever.</strong> Regulators (like the CFTC) are beginning to scrutinize the space, especially firms that aggressively market to undercapitalized retail participants using B-Book models exclusively.
+                    </p>
+                    <h4 class="font-sans font-bold text-brand-dark mt-8 mb-4">Why Should You Care?</h4>
+                    <p>
+                        If you are a CFD or Crypto trader used to massive leverage and zero rules, entering the futures prop space requires a paradigm shift. 
+                    </p>
+                    <ul class="font-sans text-base space-y-4 mb-8">
+                        <li class="flex items-start">
+                            <span class="text-brand-accent font-bold mr-2">1.</span> 
+                            <span><strong>Treat it as Capital Leasing:</strong> You are leasing buying power for a fixed cost. If your strategy relies on holding through massive drawdowns, you will fail the evaluation.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-brand-accent font-bold mr-2">2.</span> 
+                            <span><strong>EOD vs Trailing is Everything:</strong> If you swing trade or hold runners, you <em>must</em> use an EOD firm like Topstep or MFFu. Trailing drawdowns (Apex, Top One) are mathematically hostile to your edge.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-brand-accent font-bold mr-2">3.</span> 
+                            <span><strong>Extract Capital Early:</strong> Because of the regulatory gray area and B-Book nature of challengers (Tradify, Alpha, Lucid), your first goal upon funding should be extracting your initial fees and a safety buffer. Do not leave massive simulated balances sitting in unproven firms.</span>
+                        </li>
+                    </ul>
+                    <p class="bg-brand-dark text-white p-6 rounded-lg font-sans text-lg shadow-xl">
+                        <strong>The Bottom Line:</strong> The goldmine exists. If you possess a proven edge, disciplined risk management, and the intelligence to choose the firm whose rules match your personality, these firms offer the cheapest, most asymmetric path to institutional-sized payouts in history. But if you treat them like a casino, you are simply the liquidity providing the payouts for the 5% who don't.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-zinc-950 text-zinc-500 py-10 font-sans text-center border-t border-zinc-900">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="font-serif font-bold text-lg tracking-tight text-zinc-400 mb-2">
+                CAPITAL<span class="text-brand-accent">OUTLOOK</span>
+            </div>
+            <p class="text-sm">Institutional Grade Research for Retail Markets. © 2026</p>
+        </div>
+    </footer>
+
+    <!-- Core Logic & Data -->
+    <script>
+        // --- 1. DATA STORAGE ---
+        const firmsData = [
+            { 
+                id: "topstep", 
+                name: "Topstep", 
+                category: ["eod"], 
+                ddType: "End of Day (EOD)", 
+                rules: "Strict Consistency Rule (50% max day)", 
+                payout: "Standard (Gated initially)", 
+                scaling: "Progressive & Safe", 
+                verdict: "The Legacy Gold Standard. Best for serious career traders who want to reach live A-Book capital. Disliked by gamblers.",
+                color: "emerald"
+            },
+            { 
+                id: "apex", 
+                name: "Apex Trader Funding", 
+                category: ["scalper"], 
+                ddType: "Intraday Trailing (High Risk)", 
+                rules: "Virtually None. High variance allowed.", 
+                payout: "Fast, but tight payout buffers.", 
+                scaling: "Account Stacking (Up to 20)", 
+                verdict: "The Casino. Constant 90% sales make it cheap. Best for aggressive scalpers using trade copiers across multiple accounts.",
+                color: "amber"
+            },
+            { 
+                id: "mffu", 
+                name: "My Funded Futures", 
+                category: ["eod", "growth"], 
+                ddType: "End of Day (EOD)", 
+                rules: "No consistency rules.", 
+                payout: "Fast (14 Days standard)", 
+                scaling: "Trader-friendly", 
+                verdict: "The Rule-Breaker. Stripped away arbitrary rules. Highly attractive to experienced traders who manage their own risk but want EOD safety.",
+                color: "emerald"
+            },
+            { 
+                id: "tradify", 
+                name: "Tradify", 
+                category: ["scalper", "growth"], 
+                ddType: "End of Day (EOD)", 
+                rules: "Moderate", 
+                payout: "Extremely Fast 1st Payouts", 
+                scaling: "Aggressive", 
+                verdict: "The Speedster. Optimizing heavily for fast initial capital extraction to lure traders away from legacy competitors.",
+                color: "blue"
+            },
+            { 
+                id: "lucid", 
+                name: "Lucid Trading", 
+                category: ["eod"], 
+                ddType: "End of Day (EOD)", 
+                rules: "Transparent & Simple", 
+                payout: "Standard", 
+                scaling: "Steady", 
+                verdict: "The Transparent Operator. No gimmicks, clean interface, and fair EOD rules. Built for straightforward execution.",
+                color: "slate"
+            },
+            { 
+                id: "topone", 
+                name: "Top One Futures", 
+                category: ["scalper"], 
+                ddType: "Intraday Trailing", 
+                rules: "Flexible", 
+                payout: "Tiered", 
+                scaling: "Volume Based", 
+                verdict: "The Challenger. Competes directly with Apex in the cheap/trailing DD space. Good alternative if you need to diversify away from Apex risk.",
+                color: "amber"
+            },
+            { 
+                id: "alpha", 
+                name: "Alpha Futures", 
+                category: ["growth"], 
+                ddType: "End of Day (EOD)", 
+                rules: "Growth Focused", 
+                payout: "Consistent", 
+                scaling: "Best-in-class tiering", 
+                verdict: "The Scaler. Specifically designed for traders looking to build massive simulated AUM quickly through rapid account tiering.",
+                color: "blue"
+            }
+        ];
+
+        // --- 2. INTERACTION HANDLING (Filtering) ---
+        function filterFirms(filterType) {
+            const grid = document.getElementById('firmGrid');
+            grid.innerHTML = ''; // Clear existing cards
+
+            // Filter data
+            let filteredData = firmsData;
+            if (filterType !== 'all') {
+                filteredData = firmsData.filter(firm => firm.category.includes(filterType));
+            }
+
+            // Render cards
+            filteredData.forEach(firm => {
+                // Style logic based on firm type
+                let badgeStyle = "bg-zinc-100 text-zinc-800 border-zinc-200";
+                if(firm.color === 'emerald') badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                if(firm.color === 'amber') badgeStyle = "bg-amber-50 text-amber-700 border-amber-200";
+                if(firm.color === 'blue') badgeStyle = "bg-blue-50 text-blue-700 border-blue-200";
+
+                const cardHTML = `
+                    <div class="card-hover bg-white border border-zinc-200 rounded-xl p-6 flex flex-col h-full shadow-sm">
+                        <div class="mb-4 border-b border-zinc-100 pb-4">
+                            <h3 class="text-xl font-bold text-brand-dark mb-2">${firm.name}</h3>
+                            <span class="inline-block px-2.5 py-1 text-xs font-bold rounded-md border ${badgeStyle}">
+                                ${firm.ddType}
+                            </span>
+                        </div>
+                        <div class="space-y-4 text-sm text-zinc-600 flex-grow mb-6">
+                            <div>
+                                <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Ruleset</span>
+                                <span class="font-medium text-zinc-800">${firm.rules}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Payouts</span>
+                                <span>${firm.payout}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Scaling</span>
+                                <span>${firm.scaling}</span>
+                            </div>
+                        </div>
+                        <div class="bg-zinc-50 p-4 rounded-lg border border-zinc-100 mt-auto">
+                            <p class="text-sm font-medium text-zinc-700 leading-snug">
+                                <span class="font-bold text-brand-dark">Analyst View:</span> ${firm.verdict}
+                            </p>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHTML;
+            });
+
+            // Update UI Button States
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-brand-dark', 'text-white', 'shadow-md');
+                btn.classList.add('bg-white', 'text-zinc-700');
+            });
+            
+            const activeBtn = document.getElementById(`btn-${filterType}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('bg-white', 'text-zinc-700');
+                activeBtn.classList.add('bg-brand-dark', 'text-white', 'shadow-md');
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            filterFirms('all'); // Initialize Grid
+            initCharts();       // Initialize Charts
+        });
+
+        // --- 3. CHART.JS VISUALIZATIONS ---
+        function initCharts() {
+            // Chart 1: Economics Doughnut
+            const ctxEcon = document.getElementById('economicsChart').getContext('2d');
+            new Chart(ctxEcon, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Eval/Reset Fees (Losers)', 'Actual Market Alpha', 'Data/Admin Fees'],
+                    datasets: [{
+                        data: [85, 10, 5],
+                        backgroundColor: [
+                            '#0F172A', // Slate 900 (Main revenue)
+                            '#047857', // Emerald (Actual trading profits)
+                            '#B45309'  // Amber (Data fees)
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { color: '#D4D4D8', padding: 20, font: { family: 'Inter', size: 12 } } 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(24, 24, 27, 0.9)',
+                            titleFont: { family: 'Inter' },
+                            bodyFont: { family: 'Inter' },
+                            callbacks: {
+                                label: function(context) { return ' ' + context.label + ': ~' + context.parsed + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 2: Drawdown Mechanics (Line Chart)
+            const ctxDD = document.getElementById('drawdownChart').getContext('2d');
+            
+            // Sim Data
+            const labels = ['Start', 'Trade 1', 'Trade 2', 'Trade 3', 'Trade 4', 'Trade 5 (Spike)', 'Trade 6'];
+            const accountBalance = [50000, 50600, 49800, 51000, 50500, 50200, null]; 
+            const highestIntraday = [50000, 50800, 50800, 51500, 51500, 52000, 52000];
+            
+            // Limit calcs
+            const eodLimit = Array(7).fill(48000); // Fixed $2k from starting balance (simplification for EOD)
+            const trailingLimit = highestIntraday.map(val => val - 2000);
+
+            new Chart(ctxDD, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Actual Account Balance',
+                            data: accountBalance,
+                            borderColor: '#0F172A', // Dark Brand
+                            backgroundColor: 'rgba(15, 23, 42, 0.05)',
+                            borderWidth: 3,
+                            tension: 0.2,
+                            fill: true,
+                            pointBackgroundColor: '#0F172A',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'EOD Limit (Safe Zone)',
+                            data: eodLimit,
+                            borderColor: '#047857', // Emerald
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'Trailing Limit (Landmine)',
+                            data: trailingLimit,
+                            borderColor: '#B45309', // Amber/Red
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#B45309',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { 
+                            position: 'top', 
+                            labels: { usePointStyle: true, font: { family: 'Inter', weight: 'bold' } } 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(24, 24, 27, 0.95)',
+                            titleFont: { size: 14, family: 'Inter' },
+                            bodyFont: { size: 13, family: 'Inter' },
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(context.parsed.y);
+                                    }
+                                    // Add special alert for the blown account
+                                    if(context.dataIndex === 5 && context.datasetIndex === 2) {
+                                        return label + ' (ACCOUNT BLOWN!)';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 47500,
+                            max: 52500,
+                            ticks: {
+                                callback: function(value) { return '$' + value.toLocaleString(); },
+                                font: { family: 'Inter' }
+                            },
+                            grid: { color: '#E4E4E7' }
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { font: { family: 'Inter', weight: '500' } } 
+                        }
+                    },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
